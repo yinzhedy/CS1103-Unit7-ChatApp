@@ -27,6 +27,7 @@ public class ChatClient {
             String userName = ConsoleUtils.readLine("\nEnter your name: ");
             user = new User(userName);
             System.out.println("Your userID: " + user.getUserID());
+            System.out.println("Type /exit in the chat at any time to disconnect.");
 
             new ReadThread(socket, this).start();
             new WriteThread(socket, this).start();
@@ -126,7 +127,7 @@ public class ChatClient {
             do {
                 text = ConsoleUtils.readLine("[" + client.getUser().getName() + "]: ");
                 NetworkUtils.sendMessage(socket, text);  // Send message directly
-            } while (!text.equals("bye"));
+            } while (!text.equals("/exit"));
 
             client.getUser().setActive(false);
             SocketUtils.closeSocket(socket);
