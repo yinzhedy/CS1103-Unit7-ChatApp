@@ -1,5 +1,6 @@
 package chatserver;
 
+import user.User;  // Import User class
 import utils.NetworkUtils;
 import utils.SocketUtils;
 import java.io.*;
@@ -54,6 +55,7 @@ public class ChatServer {
     }
 
     void removeUser(ClientHandler user) {
+        user.getUser().setActive(false);
         clientHandlers.remove(user);
         System.out.println("The user disconnected");
         broadcast("A user has left the chat.", null);
@@ -64,53 +66,52 @@ public class ChatServer {
         private ChatServer server;
         private BufferedReader reader;
         private PrintWriter writer;
+        private User user;  // Add User field
         private HeartbeatManager heartbeatManager;
-    
+
         public ClientHandler(Socket socket, ChatServer server) {
             this.socket = socket;
             this.server = server;
             BufferedReader tempReader = null;
             PrintWriter tempWriter = null;
             try {
-                // Automatically close these resources when the try block is exited
                 InputStream input = socket.getInputStream();
                 OutputStream output = socket.getOutputStream();
                 tempReader = new BufferedReader(new InputStreamReader(input));
                 tempWriter = new PrintWriter(new OutputStreamWriter(output), true);
-        
-                // If assignment is successful and exceptions are not thrown,
-                // assign temp variables to the actual class variables.
+
                 reader = tempReader;
                 writer = tempWriter;
-                tempReader = null;  // Prevent the finally block from closing it
-                tempWriter = null;  // Prevent the finally block from closing it
-        
-                // Initialize and start the HeartbeatManager
+                tempReader = null;
+                tempWriter = null;
+
                 heartbeatManager = new HeartbeatManager(writer);
+                String userName = reader.readLine();
+                user = new User(userName);
+                broadcast("User " + user.getName() + " has joined the chat!", this);
             } catch (IOException ex) {
                 System.out.println("Error setting up streams: " + ex.getMessage());
                 closeConnection();
             } finally {
-                // Ensure that in case of an exception, resources are closed properly
                 if (tempReader != null) {
                     try { tempReader.close(); } catch (IOException e) { e.printStackTrace(); }
                 }
                 if (tempWriter != null) {
-                    tempWriter.close();  // PrintWriter's close() doesn't throw IOException
+                    tempWriter.close();
                 }
             }
         }
-    
+
         public void run() {
             try {
-                heartbeatManager.start();  // Start sending heartbeats to the client
-    
+                heartbeatManager.start();
                 String clientMessage;
                 while ((clientMessage = reader.readLine()) != null) {
                     if ("HEARTBEAT_RESPONSE".equals(clientMessage)) {
-                        continue; // Ignore the heartbeat response messages
+                        continue;  // Ignore the heartbeat response messages
                     }
-                    server.broadcast(clientMessage, this);
+                    // Broadcast user message in a cleaner format
+                    server.broadcast(user.getName() + ": " + clientMessage, this);
                 }
             } catch (IOException ex) {
                 System.out.println("Error reading from client: " + ex.getMessage());
@@ -118,7 +119,11 @@ public class ChatServer {
                 closeConnection();
             }
         }
-    
+
+        public User getUser() {
+            return user;
+        }
+
         private void closeConnection() {
             try {
                 if (reader != null) reader.close();

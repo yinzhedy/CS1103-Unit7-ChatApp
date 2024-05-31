@@ -1,5 +1,6 @@
 package chatclient;
 
+import user.User;  // Import User class
 import utils.ConsoleUtils;
 import utils.NetworkUtils;
 import utils.SocketUtils;
@@ -10,6 +11,7 @@ public class ChatClient {
     private String hostname;
     private int port;
     private Socket socket;
+    private User user;  // Add User field
 
     public ChatClient(String hostname, int port) {
         this.hostname = hostname;
@@ -21,6 +23,11 @@ public class ChatClient {
             socket = new Socket(hostname, port);
             System.out.println("Connected to the chat server");
 
+            // Collect username and create User object
+            String userName = ConsoleUtils.readLine("\nEnter your name: ");
+            user = new User(userName);
+            System.out.println("Your userID: " + user.getUserID());
+
             new ReadThread(socket, this).start();
             new WriteThread(socket, this).start();
         } catch (UnknownHostException ex) {
@@ -28,6 +35,10 @@ public class ChatClient {
         } catch (IOException ex) {
             System.out.println("I/O Error: " + ex.getMessage());
         }
+    }
+
+    public User getUser() {
+        return user;
     }
 
     public static void main(String[] args) {
@@ -46,10 +57,9 @@ public class ChatClient {
         private BufferedReader reader;
         private PrintWriter writer;
         private ChatClient client;
-    
+
         public ReadThread(Socket socket, ChatClient client) {
             this.client = client;
-            // Temporary variables to hold resources until they are fully initialized
             InputStream tempInput = null;
             OutputStream tempOutput = null;
             try {
@@ -57,15 +67,12 @@ public class ChatClient {
                 tempOutput = socket.getOutputStream();
                 reader = new BufferedReader(new InputStreamReader(tempInput));
                 writer = new PrintWriter(new OutputStreamWriter(tempOutput), true);
-    
-                // Prevent the finally block from closing these streams if initialization is successful
                 tempInput = null;
                 tempOutput = null;
             } catch (IOException ex) {
                 System.out.println("Error getting input stream: " + ex.getMessage());
                 ex.printStackTrace();
             } finally {
-                // Ensure resources are closed if they were not assigned successfully
                 if (tempInput != null) {
                     try { tempInput.close(); } catch (IOException e) { e.printStackTrace(); }
                 }
@@ -74,13 +81,13 @@ public class ChatClient {
                 }
             }
         }
-    
+
         public void run() {
             HeartbeatHandler heartbeatHandler = new HeartbeatHandler(writer);
             while (true) {
                 try {
                     String serverMessage = reader.readLine();
-                    if (serverMessage == null) {  // Check if the server has closed the connection
+                    if (serverMessage == null) {
                         break;
                     }
                     if ("HEARTBEAT".equals(serverMessage)) {
@@ -90,7 +97,7 @@ public class ChatClient {
                     System.out.println("\n" + serverMessage);
                 } catch (IOException ex) {
                     System.out.println("Error reading from server: " + ex.getMessage());
-                    break;  // Exit the loop on error
+                    break;
                 }
             }
         }
@@ -115,15 +122,13 @@ public class ChatClient {
         }
 
         public void run() {
-            String userName = ConsoleUtils.readLine("\nEnter your name: ");
-            NetworkUtils.sendMessage(socket, "NEW_USER " + userName);
-
             String text;
             do {
-                text = ConsoleUtils.readLine("[" + userName + "]: ");
-                NetworkUtils.sendMessage(socket, "MESSAGE " + text);
+                text = ConsoleUtils.readLine("[" + client.getUser().getName() + "]: ");
+                NetworkUtils.sendMessage(socket, text);  // Send message directly
             } while (!text.equals("bye"));
 
+            client.getUser().setActive(false);
             SocketUtils.closeSocket(socket);
         }
     }
