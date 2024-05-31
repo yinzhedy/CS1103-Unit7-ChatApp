@@ -1,4 +1,4 @@
-package chatserver;
+package Server;
 
 import java.io.PrintWriter;
 import java.util.Timer;

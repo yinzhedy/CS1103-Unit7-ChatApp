@@ -1,5 +1,5 @@
-import chatserver.ChatServer;
-import chatclient.ChatClient;
+import Client.ChatClient;
+import Server.ChatServer;
 
 public class App {
     public static void main(String[] args) {

@@ -1,4 +1,4 @@
-package chatclient;
+package Client;
 
 import java.io.PrintWriter;
 

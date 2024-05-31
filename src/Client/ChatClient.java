@@ -1,4 +1,4 @@
-package chatclient;
+package Client;
 
 import user.User;  // Import User class
 import utils.ConsoleUtils;

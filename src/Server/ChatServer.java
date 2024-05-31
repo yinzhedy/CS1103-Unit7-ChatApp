@@ -1,4 +1,4 @@
-package chatserver;
+package Server;
 
 import user.User;  // Import User class
 import utils.NetworkUtils;
