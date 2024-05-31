@@ -131,6 +131,8 @@ public class ChatClient {
 
             client.getUser().setActive(false);
             SocketUtils.closeSocket(socket);
+            System.out.println("You have left the chat.");
+            System.exit(0);  // Exit the program
         }
     }
 }

@@ -110,6 +110,10 @@ public class ChatServer {
                     if ("HEARTBEAT_RESPONSE".equals(clientMessage)) {
                         continue;  // Ignore the heartbeat response messages
                     }
+                    if ("/exit".equalsIgnoreCase(clientMessage.trim())) {
+                        System.out.println("User " + user.getName() + " has left the chat.");
+                        break;
+                    }
                     // Broadcast user message in a cleaner format
                     server.broadcast(user.getName() + ": " + clientMessage, this);
                 }
